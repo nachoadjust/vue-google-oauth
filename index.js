@@ -44,7 +44,7 @@
         directAccess = true
       },
 
-      signIn: function (successCallback, errorCallback) {
+      signIn: function (successCallback, errorCallback, oAuthParams) {
         if (directAccess) {
           window.gapi.auth2.getAuthInstance().signIn().then(function (googleUser) {
             successCallback(googleUser)
@@ -52,7 +52,10 @@
             errorCallback(error)
           })
         } else {
-          window.gapi.auth2.getAuthInstance().grantOfflineAccess({'redirect_uri': 'postmessage'}).then(function (response) {
+          if (oAuthParams === undefined) {
+            oAuthParams = {'redirect_uri': 'postmessage'}
+          }
+          window.gapi.auth2.getAuthInstance().grantOfflineAccess(oAuthParams).then(function (response) {
             successCallback(response.code)
           }, function (error) {
             errorCallback(error)
