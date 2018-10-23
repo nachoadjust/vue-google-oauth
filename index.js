@@ -8,8 +8,8 @@
   }
 }(this, function () {
   var config = null
-  var directAccess = false
-  var gapiUrl = 'https://apis.google.com/js/api:client.js'
+  var googleAuthInstance = null
+  var gapiUrl = 'https://apis.google.com/js/platform.js'
 
   var gAuth = {
     install: function (Vue, options) {
@@ -17,7 +17,7 @@
       Vue.prototype.$googleAuth = googleAuth
 
       if (typeof options === 'object') {
-        config = Object.assign({scope: 'profile email'}, options)
+        config = Object.assign({ scope: 'profile email' }, options)
       }
     }
   }
@@ -40,31 +40,31 @@
         })
       },
 
-      directAccess: function () {
-        directAccess = true
+      signIn: function (successCallback, errorCallback) {
+        googleAuthInstance.signIn().then(function (googleUser) {
+          successCallback(googleUser)
+        }, function (error) {
+          errorCallback(error)
+        })
       },
 
-      signIn: function (successCallback, errorCallback, oAuthParams) {
-        if (directAccess) {
-          window.gapi.auth2.getAuthInstance().signIn().then(function (googleUser) {
-            successCallback(googleUser)
-          }, function (error) {
-            errorCallback(error)
-          })
-        } else {
-          if (oAuthParams === undefined) {
-            oAuthParams = {'redirect_uri': 'postmessage'}
+      getAuthCode: function (successCallback, errorCallback, options) {
+        if (options === undefined) {
+          options = {
+            'prompt': 'consent',
+            'redirect_uri': 'postmessage'
           }
-          window.gapi.auth2.getAuthInstance().grantOfflineAccess(oAuthParams).then(function (response) {
-            successCallback(response.code)
-          }, function (error) {
-            errorCallback(error)
-          })
         }
+
+        googleAuthInstance.grantOfflineAccess(options).then(function (response) {
+          successCallback(response.code)
+        }, function (error) {
+          errorCallback(error)
+        })
       },
 
       signOut: function (successCallback, errorCallback) {
-        window.gapi.auth2.getAuthInstance().signOut().then(function () {
+        googleAuthInstance.signOut().then(function () {
           successCallback()
         }, function (error) {
           errorCallback(error)
@@ -92,6 +92,7 @@
     return new Promise(function (resolve, reject) {
       window.gapi.load('auth2', function () {
         window.gapi.auth2.init(config)
+        googleAuthInstance = window.gapi.auth2.getAuthInstance()
         resolve()
       })
     })
